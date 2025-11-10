@@ -13,6 +13,7 @@ venv/
 .env
 .env.*
 !.env.example   # optional — keep a safe example for others
+service-account.json
 
 # ---- IDE / Editor ----
 .vscode/
