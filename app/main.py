@@ -3,10 +3,12 @@ import json
 from fastapi import FastAPI
 import asyncio
 from fastapi.middleware.cors import CORSMiddleware
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 from app.jobs.run_pipeline import run_pipeline
 from app.utils.general_functions import generalFunctions
 import logging
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.date import DateTrigger
 
 app = FastAPI(title="Data-Bridge", version="0.1.0")
 
@@ -40,7 +42,6 @@ def daterange(start_date: date, end_date: date):
 
 def run_backfill_sync():
     start_date = date(2024, 8, 14)
-    # end_date = date(2024, 8, 15)
     end_date = date(2025, 10, 31)
 
     progress = load_progress()
@@ -79,11 +80,27 @@ async def run_backfill_background():
 @app.on_event("startup")
 async def startup_event():
     """Triggered automatically when FastAPI starts."""
-    try:
-        asyncio.create_task(run_backfill_background())
-        logging.info("✅ Background backfill started successfully")
-    except Exception as e:
-        logging.error(f"❌ Background backfill failed: {str(e)}")
+    scheduler = AsyncIOScheduler()
+
+    now = datetime.now()
+    run_time = now.replace(hour=12, minute=5, second=0, microsecond=0)
+    if run_time <= now:
+        run_time = run_time + timedelta(minutes=5)  # schedule for next day if already past
+
+    # scheduler.add_job(
+    #     run_backfill_background,
+    #     trigger=DateTrigger(run_date=run_time)
+    # )
+    scheduler.add_job(
+        run_backfill_background,
+        trigger=DateTrigger(run_date=run_time),
+        id="backfill_once",
+        max_instances=1,  # ensures only one run at a time
+        replace_existing=True
+    )
+
+    scheduler.start()
+    logging.info(f"⏰ Backfill scheduled for {run_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
 @app.get("/")
 async def root():
