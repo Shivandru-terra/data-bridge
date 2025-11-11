@@ -39,7 +39,7 @@ def daterange(start_date: date, end_date: date):
         yield start_date + timedelta(n)
 
 def run_backfill_sync():
-    start_date = date(2024, 8, 15)
+    start_date = date(2024, 8, 14)
     # end_date = date(2024, 8, 15)
     end_date = date(2025, 10, 31)
 
