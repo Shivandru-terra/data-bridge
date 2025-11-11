@@ -77,31 +77,18 @@ async def run_backfill_background():
     loop = asyncio.get_event_loop()
     await loop.run_in_executor(None, run_backfill_sync)
 
-@app.on_event("startup")
-async def startup_event():
-    """Triggered automatically when FastAPI starts."""
-    scheduler = AsyncIOScheduler()
 
-    now = datetime.now()
-    run_time = now.replace(hour=12, minute=5, second=0, microsecond=0)
-    if run_time <= now:
-        run_time = run_time + timedelta(minutes=5)  # schedule for next day if already past
-
-    # scheduler.add_job(
-    #     run_backfill_background,
-    #     trigger=DateTrigger(run_date=run_time)
-    # )
-    scheduler.add_job(
-        run_backfill_background,
-        trigger=DateTrigger(run_date=run_time),
-        id="backfill_once",
-        max_instances=1,  # ensures only one run at a time
-        replace_existing=True
-    )
-
-    scheduler.start()
-    logging.info(f"⏰ Backfill scheduled for {run_time.strftime('%Y-%m-%d %H:%M:%S')}")
+@app.get("/trigger-backfill")
+async def trigger_backfill():
+    """This endpoint will be called by Cloud Scheduler via HTTP."""
+    asyncio.create_task(run_backfill_background())
+    logging.info("🚀 Backfill triggered via Cloud Scheduler")
+    return {"status": "triggered"}
 
 @app.get("/")
 async def root():
     return {"status": "ok", "app": "data-bridge"}
+
+if __name__ == "__main__":
+    print("🚀 Running backfill via Cloud Run Job")
+    run_backfill_sync()
