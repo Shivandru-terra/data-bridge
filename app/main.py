@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from datetime import date, timedelta
 from app.jobs.run_pipeline import run_pipeline
 from app.utils.general_functions import generalFunctions
+import logging
 
 app = FastAPI(title="Data-Bridge", version="0.1.0")
 
@@ -78,7 +79,11 @@ async def run_backfill_background():
 @app.on_event("startup")
 async def startup_event():
     """Triggered automatically when FastAPI starts."""
-    asyncio.create_task(run_backfill_background())
+    try:
+        asyncio.create_task(run_backfill_background())
+        logging.info("✅ Background backfill started successfully")
+    except Exception as e:
+        logging.error(f"❌ Background backfill failed: {str(e)}")
 
 @app.get("/")
 async def root():
