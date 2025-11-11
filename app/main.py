@@ -38,9 +38,9 @@ def daterange(start_date: date, end_date: date):
         yield start_date + timedelta(n)
 
 def run_backfill_sync():
-    start_date = date(2024, 8, 8)
-    end_date = date(2024, 8, 15)
-    # end_date = date(2025, 10, 31)
+    start_date = date(2024, 8, 15)
+    # end_date = date(2024, 8, 15)
+    end_date = date(2025, 10, 31)
 
     progress = load_progress()
     last_completed = progress.get("last_completed")
